@@ -1,0 +1,62 @@
+#include <iostream>
+#include <curl/curl.h>
+#include <json/json.h>  // Requires jsoncpp library
+#include <stack>
+
+// Function to store API response
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
+    size_t totalSize = size * nmemb;
+    output->append((char*)contents, totalSize);
+    return totalSize;
+}
+
+// JSON Validator using Stack
+bool isJSONValid(const std::string& json) {
+    std::stack<char> s;
+    for (char ch : json) {
+        if (ch == '{' || ch == '[') {
+            s.push(ch);
+        } else if (ch == '}' || ch == ']') {
+            if (s.empty()) return false;
+            char top = s.top();
+            s.pop();
+            if ((ch == '}' && top != '{') || (ch == ']' && top != '[')) {
+                return false; // Mismatched JSON structure
+            }
+        }
+    }
+    return s.empty();
+}
+
+// Fetch API Response
+std::string fetchAPIResponse(const std::string& url) {
+    CURL* curl;
+    CURLcode res;
+    std::string response;
+
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+    }
+    return response;
+}
+
+int main() {
+    std::string apiUrl = "https://jsonplaceholder.typicode.com/posts/1";  // Replace with your API
+    std::string response = fetchAPIResponse(apiUrl);
+
+    std::cout << "API Response: " << response << std::endl;
+    
+    if (isJSONValid(response)) {
+        std::cout << "✅ API returned valid JSON!" << std::endl;
+    } else {
+        std::cout << "❌ API response is INVALID!" << std::endl;
+        return 1;  // Fail test if JSON is broken
+    }
+
+    return 0;
+}
