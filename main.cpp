@@ -13,8 +13,4 @@ bool isPalindrome(const std::string& str) {
     return true;
 }
 
-int main() {
-    std::string test = "racecar";
-    std::cout << "Is palindrome: " << (isPalindrome(test) ? "Yes" : "No") << std::endl;
-    return 0;
-}
+
